@@ -85,7 +85,7 @@ def deduplicate_images(path, hash_size, recursive=False):
 
 def main():
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('path', metavar=str, default='.')
+    argparser.add_argument('path', default='.')
     argparser.add_argument('-hs', '--HASH_SIZE', metavar=int, default=8)
     argparser.add_argument('-r', '--recursive', metavar=bool, default=False)
     args = argparser.parse_args()
