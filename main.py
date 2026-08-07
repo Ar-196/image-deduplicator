@@ -79,7 +79,7 @@ def prune_duplicates(hash_to_file_map):
         print(f"Error when trying to prune duplicates: {e}")
         return False
 
-def deduplicate_files(path, hash_size, recursive=False):
+def deduplicate_images(path, hash_size, recursive=False):
     mapping = read_images_and_get_hash_dict(path, hash_size, recursive)
     return prune_duplicates(mapping)
 
@@ -90,7 +90,7 @@ def main():
     argparser.add_argument('-r', '--recursive', metavar=bool, default=False)
     args = argparser.parse_args()
 
-    print(deduplicate_files(args.path, args.HASH_SIZE, args.recursive))
+    print(deduplicate_images(args.path, args.HASH_SIZE, args.recursive))
 
 if __name__ == "__main__":
     main()
