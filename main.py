@@ -63,7 +63,7 @@ def read_images_and_get_hash_dict(path, hash_size, recursive=False):
     try:
         for file in filenames:
             img = Image.open(file)
-            hash = dHash(img, hash_size, file)
+            hash = dHash(img, hash_size, name=None) #change the name parameter to name=file to save the hashes 
             if hash not in htf:
                 htf[hash] = []
             htf[hash].append(file)
@@ -77,15 +77,18 @@ def prune_duplicates(hash_to_file_map, max_dist=4):
     grouped_htf = {}
 
     for i in hash_to_file_map.keys():
+        flg = False
         for j in grouped_htf.keys():
             hamming = bin(i ^ j).count('1')
             if hamming > max_dist:
                 continue
             else:
                 grouped_htf[j].extend(hash_to_file_map[i])
-        grouped_htf[i] = hash_to_file_map[i]
+                flg = True
+                break
+        if not flg: grouped_htf[i] = hash_to_file_map[i]
 
-    #print(grouped_htf)
+    print(grouped_htf)
             
     duplicates = [grouped_htf[i] for i in grouped_htf if len(grouped_htf[i]) > 1]
     try:
