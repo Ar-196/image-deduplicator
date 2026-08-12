@@ -23,6 +23,7 @@ def dHash(image: Image.ImageFile, hash_size, name:str=None):
 
     return hash1
 
+# TODO: expand to include GIF and video similarity matching
 def is_valid_image(file_name):
     try:
         with Image.open(file_name) as img:
@@ -72,8 +73,8 @@ def read_images_and_get_hash_dict(path, hash_size, recursive=False):
         print(f"Error when hashing files: {e}")
         return None
 
-def prune_duplicates(hash_to_file_map, max_dist=4):
-    if not hash_to_file_map: return False
+def form_duplicate_groups(hash_to_file_map, max_dist=4):
+    if not hash_to_file_map: return {}
     grouped_htf = {}
 
     for i in hash_to_file_map.keys():
@@ -87,9 +88,9 @@ def prune_duplicates(hash_to_file_map, max_dist=4):
                 flg = True
                 break
         if not flg: grouped_htf[i] = hash_to_file_map[i]
+    return grouped_htf
 
-    print(grouped_htf)
-            
+def prune_duplicates(grouped_htf):          
     duplicates = [grouped_htf[i] for i in grouped_htf if len(grouped_htf[i]) > 1]
     try:
         cnt = 0
@@ -103,9 +104,22 @@ def prune_duplicates(hash_to_file_map, max_dist=4):
         print(f"Error when trying to prune duplicates: {e}")
         return False
 
-def deduplicate_images(path, hash_size=8, recursive=False, max_dist=4):
+def deduplicate_images(path, hash_size=8, recursive=False, max_dist=4, delete=False, verbose=False):
+    if verbose: print("Reading Files...")
     mapping = read_images_and_get_hash_dict(path, hash_size, recursive)
-    return prune_duplicates(mapping, max_dist)
+    if verbose: 
+        print(f"Found {len(mapping)} valid image files.")
+        print(f"Grouping images by hash...")
+    grouped_htf = form_duplicate_groups(mapping, max_dist)
+    duplicates = [grouped_htf[i] for i in grouped_htf if len(grouped_htf[i]) > 1]
+    if not (grouped_htf and delete): 
+        if verbose: print("Delete is disabled or no grouping is present, returning duplicates found")
+        return  duplicates #return duplicates found
+    if verbose: print("Delete enabled, proceeding with deletion and returning duplicates found")
+    delete_res = prune_duplicates(grouped_htf)
+    if not delete_res: 
+        if verbose: print("No files were deleted.")
+    return duplicates
 
 def main():
     argparser = argparse.ArgumentParser()
@@ -113,9 +127,11 @@ def main():
     argparser.add_argument('-hs', '--hash_size', metavar=int, default=8, help="Size of hashes to be used for calculating image similarity (bigger sizes are more accurate, but may impact performance for lots of images)")
     argparser.add_argument('-r', '--recursive', action="store_true", default=False, help="Whether to search for image files in sub-folders from the path")
     argparser.add_argument('-m', '--max_dist', metavar=int, default=0, help="Max Hamming Distance to gauge image similarity off the image hashes (setting to 0 will make this look for exact matches only)")
+    argparser.add_argument('-d', '--delete', action='store_true', default=False, help='If this flag is enabled, the duplicates found by this program will be deleted, otherwise the duplicates will simply be printed out for manual inspection and deletion')
+    argparser.add_argument('-v', '--verbose', action='store_true', default=False, help='If this flag is enabled, enables prints at each stage of program operation using print()')
     args = argparser.parse_args()
 
-    print(deduplicate_images(args.path, int(args.hash_size), args.recursive, int(args.max_dist)))
+    print(deduplicate_images(args.path, int(args.hash_size), args.recursive, int(args.max_dist), args.delete, args.verbose))
 
 if __name__ == "__main__":
     main()
