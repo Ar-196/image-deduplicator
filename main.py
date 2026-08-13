@@ -1,6 +1,7 @@
 import os
 from PIL import Image
 import argparse
+
 # Given a directory to a set of images, attempts to find duplicates within the image files.
 # Method used: difference hash
 
@@ -39,11 +40,9 @@ def read_image_files(path, recursive=False):
     all_files = []
 
     try:
-        # List all entries in the current directory
         for entry in os.listdir(path):
             full_path = os.path.join(path, entry)
 
-            # If it's a directory, recurse into it (if recursion enabled)
             if os.path.isdir(full_path):
                 if recursive: all_files += read_image_files(full_path, recursive)
             else:
@@ -67,10 +66,12 @@ def read_images_and_get_hash_dict(path, hash_size, recursive=False):
     try:
         for file in filenames:
             img = Image.open(file)
-            hash = dHash(img, hash_size, name=None) #change the name parameter to name=file to save the hashes 
+            hash = dHash(img, hash_size, name=None) # change the name parameter to name=file to save the hashes 
             if hash not in htf:
                 htf[hash] = []
-            htf[hash].append(file)
+            w, h = img.size
+            htf[hash].append((w * h, file)) # include size (width * height) to later sort with when grouping hashes (ensures that if pruning duplicates with the function here, the image with the largest resolution among the duplicates will be left)
+            img.close()
         return htf
     except Exception as e:
         print(f"Error when hashing files: {e}")
@@ -91,6 +92,11 @@ def form_duplicate_groups(hash_to_file_map, max_dist=4):
                 flg = True
                 break
         if not flg: grouped_htf[i] = hash_to_file_map[i]
+
+    # sort grouped hash map by image size and remove size, leaving only file names sorted by size (width * height) within each duplicate group
+    for i in grouped_htf:
+        grouped_htf[i].sort()
+        grouped_htf[i] = [fname for size, fname in grouped_htf[i]]
     return grouped_htf
 
 def prune_duplicates(grouped_htf):          
@@ -117,8 +123,8 @@ def deduplicate_images(path, hash_size=8, recursive=False, max_dist=4, delete=Fa
     duplicates = [grouped_htf[i] for i in grouped_htf if len(grouped_htf[i]) > 1]
     if not (grouped_htf and delete): 
         if verbose: 
-            if not delete: print("Delete is disabled, returning duplicates found")
-            else: print("No duplicates found")
+            if not grouped_htf: print("No duplicates found")
+            else: print("Delete is disabled, returning duplicates found")
         return duplicates # return duplicates found
     if verbose: print("Delete enabled, proceeding with deletion and returning duplicates found")
     delete_res = prune_duplicates(grouped_htf)
@@ -131,7 +137,7 @@ def main():
     argparser.add_argument('path', default='.', help="Relative path to a folder to start searching for image files from")
     argparser.add_argument('-hs', '--hash_size', metavar=int, default=8, help="Size of hashes to be used for calculating image similarity (bigger sizes are more accurate, but may impact performance for lots of images)")
     argparser.add_argument('-r', '--recursive', action="store_true", default=False, help="Whether to search for image files in sub-folders from the path")
-    argparser.add_argument('-m', '--max_dist', metavar=int, default=0, help="Max Hamming Distance to gauge image similarity off the image hashes (setting to 0 will make this look for exact matches only)")
+    argparser.add_argument('-m', '--max_dist', metavar=int, default=0, help="Max Hamming Distance to gauge image similarity off the image hashes (setting to 0 will make this look for exact matches only. Recommended value here is ~25%% of hash_size^2 for similar images, and ~12.5%% of hash_size^2 for more exact duplicate matching while still accounting for minor alterations and resolution differences)")
     argparser.add_argument('-d', '--delete', action='store_true', default=False, help='If this flag is enabled, the duplicates found by this program will be deleted, otherwise the duplicates will simply be printed out for manual inspection and deletion')
     argparser.add_argument('-v', '--verbose', action='store_true', default=False, help='If this flag is enabled, enables prints at each stage of program operation using print()')
     args = argparser.parse_args()
