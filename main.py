@@ -4,10 +4,13 @@ import argparse
 # Given a directory to a set of images, attempts to find duplicates within the image files.
 # Method used: difference hash
 
-def dHash(image: Image.ImageFile, hash_size, name:str=None):
+def dHash(image, hash_size, name:str=None):
+    if image.mode != "RGBA":
+        image = image.convert("RGBA")
+
     greyed = image.resize((hash_size + 1, hash_size)).convert("L")
 
-    # debug function: if you pass the name into this function, it will save the compressed image prior to hashing
+    # debug feature: if you pass the name into this function, it will save the compressed image prior to hashing
     if name: 
         parts = name.strip('.\\').split('.')
         greyed.save(f"{parts[-2]}_hash.{parts[-1]}")
@@ -113,8 +116,10 @@ def deduplicate_images(path, hash_size=8, recursive=False, max_dist=4, delete=Fa
     grouped_htf = form_duplicate_groups(mapping, max_dist)
     duplicates = [grouped_htf[i] for i in grouped_htf if len(grouped_htf[i]) > 1]
     if not (grouped_htf and delete): 
-        if verbose: print("Delete is disabled or no grouping is present, returning duplicates found")
-        return  duplicates #return duplicates found
+        if verbose: 
+            if not delete: print("Delete is disabled, returning duplicates found")
+            else: print("No duplicates found")
+        return duplicates # return duplicates found
     if verbose: print("Delete enabled, proceeding with deletion and returning duplicates found")
     delete_res = prune_duplicates(grouped_htf)
     if not delete_res: 
@@ -131,7 +136,15 @@ def main():
     argparser.add_argument('-v', '--verbose', action='store_true', default=False, help='If this flag is enabled, enables prints at each stage of program operation using print()')
     args = argparser.parse_args()
 
-    print(deduplicate_images(args.path, int(args.hash_size), args.recursive, int(args.max_dist), args.delete, args.verbose))
+    for dupe in deduplicate_images(args.path, int(args.hash_size), args.recursive, int(args.max_dist), args.delete, args.verbose):
+        print('[', end='')
+        for i in range(len(dupe)):
+            print(dupe[i], end='')
+            if i != len(dupe) - 1:
+                print(', ', end='')
+        print(']')
+
+    #print(deduplicate_images(args.path, int(args.hash_size), args.recursive, int(args.max_dist), args.delete, args.verbose))
 
 if __name__ == "__main__":
     main()
