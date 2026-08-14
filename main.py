@@ -124,10 +124,10 @@ class ImageDeduplicator:
         duplicates = [grouped_htf[i] for i in grouped_htf if len(grouped_htf[i]) > 1]
         if not (grouped_htf and delete): 
             if verbose: 
-                if not grouped_htf: print("No duplicates found")
-                else: print("Delete is disabled, returning duplicates found")
+                if not grouped_htf: print("No duplicates found.")
+                else: print("Delete is disabled, returning duplicates found.")
             return duplicates # return duplicates found
-        if verbose: print("Delete enabled, proceeding with deletion and returning duplicates found")
+        if verbose: print("Delete enabled, proceeding with deletion...")
         delete_res = self.__prune_duplicates(grouped_htf)
         if not delete_res: 
             if verbose: print("No files were deleted.")
@@ -136,8 +136,8 @@ class ImageDeduplicator:
 def main():
     deduplicator = ImageDeduplicator()
     argparser = argparse.ArgumentParser()
-    argparser.add_argument('path', default='.', help="Relative path to a folder to start searching for image files from")
-    argparser.add_argument('-hs', '--hash_size', metavar=int, default=8, help="Size of hashes to be used for calculating image similarity (bigger sizes are more accurate, but may impact performance for lots of images)")
+    argparser.add_argument('path', default='.', help="Relative path to a directory to start searching for image files from")
+    argparser.add_argument('-hs', '--hash_size', metavar=int, default=8, help="Size of hashes to be used for calculating image similarity (bigger sizes allow for smaller patterns to be detected in the hash, but may impact performance and memory for lots of images)")
     argparser.add_argument('-r', '--recursive', action="store_true", default=False, help="Whether to search for image files in sub-folders from the path")
     argparser.add_argument('-m', '--max_dist', metavar=int, default=0, help="Max Hamming Distance to gauge image similarity off the image hashes (setting to 0 will make this look for exact matches only. Recommended value here is ~25%% of hash_size^2 for similar images, and ~12.5%% of hash_size^2 for more exact duplicate matching while still accounting for minor alterations and resolution differences)")
     argparser.add_argument('-d', '--delete', action='store_true', default=False, help='If this flag is enabled, the duplicates found by this program will be deleted, otherwise the duplicates will simply be printed out for manual inspection and deletion.')
@@ -151,8 +151,6 @@ def main():
             if i != len(dupe) - 1:
                 print(', ', end='')
         print(']')
-
-    #print(deduplicate_images(args.path, int(args.hash_size), args.recursive, int(args.max_dist), args.delete, args.verbose))
 
 if __name__ == "__main__":
     main()
