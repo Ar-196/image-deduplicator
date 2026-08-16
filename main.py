@@ -105,13 +105,14 @@ def prune_duplicates(grouped_htf):
         cnt = 0
         for dup in duplicates:
             for i in range(len(dup) - 1):
-                os.remove(dup[i])
+                os.remove(dup.pop(0))
                 cnt += 1
-        # return whether any images were removed
-        return cnt > 0
+            
+        # return number of images were removed, as well as images that remain
+        return (cnt, duplicates)
     except Exception as e:
         print(f"Error when trying to prune duplicates: {e}")
-        return False
+        return (0, duplicates)
 
 def deduplicate_images(path, hash_size=8, recursive=False, max_dist=4, delete=False, verbose=False):
     if verbose: print("Reading Files...")
@@ -121,16 +122,15 @@ def deduplicate_images(path, hash_size=8, recursive=False, max_dist=4, delete=Fa
         print(f"Grouping images by hash...")
     grouped_htf = form_duplicate_groups(mapping, max_dist)
     duplicates = [grouped_htf[i] for i in grouped_htf if len(grouped_htf[i]) > 1]
-    if not (grouped_htf and delete): 
+    if not (duplicates and delete): 
         if verbose: 
-            if not grouped_htf: print("No duplicates found")
+            if not duplicates: print("No duplicates found")
             else: print("Delete is disabled, returning duplicates found")
         return duplicates # return duplicates found
     if verbose: print("Delete enabled, proceeding with deletion and returning duplicates found")
-    delete_res = prune_duplicates(grouped_htf)
-    if not delete_res: 
-        if verbose: print("No files were deleted.")
-    return duplicates
+    delete_res, remaining = prune_duplicates(grouped_htf)
+    if verbose: print(f"{delete_res} files were deleted.")
+    return remaining
 
 def main():
     argparser = argparse.ArgumentParser()
