@@ -145,13 +145,18 @@ def main():
     argparser.add_argument('-v', '--verbose', action='store_true', default=False, help='If this flag is enabled, enables prints at each stage of program operation using print()')
     args = argparser.parse_args()
 
-    for dupe in deduplicator.deduplicate_images(args.path, int(args.hash_size), args.recursive, int(args.max_dist), args.delete, args.verbose):
-        print('[', end='')
-        for i in range(len(dupe)):
-            print(dupe[i], end='')
-            if i != len(dupe) - 1:
-                print(', ', end='')
-        print(']')
+    res = deduplicator.deduplicate_images(args.path, int(args.hash_size), args.recursive, int(args.max_dist), args.delete, args.verbose)
+
+    out = open("duplicates.txt", "w")
+    for dupe in res:
+        out.write(f'[{", ".join(dupe)}]\n')
+        # print('[', end='')
+        # for i in range(len(dupe)):
+        #     print(dupe[i], end='')
+        #     if i != len(dupe) - 1:
+        #         print(', ', end='')
+        # print(']')
+        
 
 if __name__ == "__main__":
     main()
