@@ -43,7 +43,7 @@ class ImageDeduplicator:
         except:
             return None
 
-    def __read_image_files(self, path:str, recursive=False):
+    def __read_image_files(self, path:str, recursive=False, sub=False):
         all_files = []
         res = None
 
@@ -52,10 +52,10 @@ class ImageDeduplicator:
                 full_path = os.path.join(path, entry)
 
                 if os.path.isdir(full_path):
-                    if recursive: all_files += self.__read_image_files(full_path, recursive)
+                    if recursive: all_files += self.__read_image_files(full_path, recursive, sub=True)
                 else:
                     all_files.append(full_path)
-
+            if sub: return all_files
             res = [img for img in self.threadpool.map(self.__is_valid_image_file, all_files) if img]
         except Exception as e:
             print(f"Error when accessing the directory {path}: {e}") 
